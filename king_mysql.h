@@ -21,6 +21,8 @@
 
 #include <mysql/mysql.h>
 
+#define KING_COLUME_LENGTH_MAX 1024
+
 typedef struct king_mysql_s
 {
     MYSQL *conn;
@@ -34,6 +36,17 @@ typedef struct king_mysql_s
     char db_name[32];
 } king_mysql_t;
 
+typedef struct king_element_s
+{
+    char s_value[KING_COLUME_LENGTH_MAX];
+} king_element_t;
+
+typedef struct king_result_s
+{
+    int total;
+    king_element_t *result_set;
+} king_result_t;
+
 int king_mysql_init(king_mysql_t *info, char *host, int port,
         char *user, char *passwd, char *db_name);
 
@@ -42,6 +55,9 @@ int king_mysql_connect(king_mysql_t *info);
 int king_mysql_close(king_mysql_t *info);
 
 int king_mysql_query(king_mysql_t *info, MYSQL_RES **out_result,
+        char *sql_buf, int len);
+
+int king_mysql_query_result(king_mysql_t *info, king_result_t *out_result,
         char *sql_buf, int len);
 
 #endif

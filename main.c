@@ -33,31 +33,36 @@ int main(void)
 {
     int ret = 0;
     char query_buf[256] = {0};
-    MYSQL_RES *result = NULL;
+    king_result_t result;
     MYSQL_ROW row;
     king_mysql_t mysql_info;
+    int i = 0;
+
     memset(&mysql_info, 0, sizeof(mysql_info));
+    memset(&result, 0, sizeof(result));
 
     ret = king_mysql_init(&mysql_info, host, port, user, passwd, db);
     if (ret < 0)
     {
-        printf("%s: mysql init failed", __FUNCTION__);
+        printf("%s: mysql init failed\n", __FUNCTION__);
         exit(1);
     }
 
     snprintf(query_buf, sizeof(query_buf), "select * from student");
-    ret =  king_mysql_query(&mysql_info, &result, query_buf, strlen(query_buf));
+    ret = king_mysql_query_result(&mysql_info, &result, query_buf, strlen(query_buf));
+    //ret = king_mysql_query(&mysql_info, &result, query_buf, strlen(query_buf));
     if (ret < 0)
     {
-        printf("%s: mysql query failed", __FUNCTION__);
+        printf("%s: mysql query failed\n", __FUNCTION__);
         exit(1);
     }
 
-    
-    while ((row = mysql_fetch_row(result)) != NULL)
+    printf("%s: total: %d\n", __FUNCTION__, result.total);
+
+    for (i = 0; i < result.total; i++)
     {
-        printf("id : %s, name: %s\n", row[0], row[1]);
-    }
+        printf("%s: result[%d]: %s\n", __FUNCTION__, i, result.result_set[i].s_value);
+    }    
 
     king_mysql_close(&mysql_info);
     printf("hello world\n");

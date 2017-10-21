@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <mysql/mysql.h>
 #include "king_mysql.h"
 
@@ -109,7 +110,7 @@ int king_mysql_query(king_mysql_t *info, MYSQL_RES **out_result,
         return -1;
     }
 
-    result = mysql_use_result(info->conn);
+    result = mysql_store_result(info->conn);
     if (NULL == result)
     {
         printf("%s: mysql use result failed\n", __FUNCTION__);
@@ -120,3 +121,66 @@ int king_mysql_query(king_mysql_t *info, MYSQL_RES **out_result,
 
     return 0;
 }
+
+int king_mysql_query_result(king_mysql_t *info, king_result_t *out_result,
+        char *sql_buf, int len)
+{
+    int ret = 0;
+    int status = 0;
+    MYSQL_RES *result = NULL;
+    king_element_t *p_element = NULL;
+    int row_num = 0;
+    int field_num = 0;
+    int i = 0;
+    MYSQL_ROW row;
+
+    if (NULL == info || NULL == out_result || NULL == sql_buf)
+    {
+        printf("%s: Invalid param", __FUNCTION__);
+        return -1;
+    }    
+
+    ret = king_mysql_query(info, &result, sql_buf,len);
+    if (ret < 0)
+    {
+        printf("%s: Invalid param", __FUNCTION__);
+        return -1;
+    }    
+
+    row_num = mysql_num_rows(result);
+    field_num = mysql_num_fields(result);
+
+    printf("%s: row num: %d, field num: %d\n", __FUNCTION__, row_num, field_num);
+    out_result->result_set = (king_element_t *)malloc(sizeof(king_element_t) * row_num *
+            field_num);
+    if (NULL == out_result->result_set)
+    {
+        printf("%s: malloc failed", __FUNCTION__);
+        status = -1;
+        goto on_return;
+    }
+
+    p_element = (king_element_t *)out_result->result_set;
+    while (1)
+    {
+        row = mysql_fetch_row(result);
+        if (NULL == row)
+        {
+            break;
+        }
+
+        for (i = 0; i < field_num; i++)
+        {
+            snprintf(p_element->s_value, KING_COLUME_LENGTH_MAX - 1, "%s",
+                    row[i]?row[i]:"");
+            out_result->total++;
+            p_element++;
+        }
+    }
+
+on_return:
+    mysql_free_result(result); 
+
+    return status;
+}
+
