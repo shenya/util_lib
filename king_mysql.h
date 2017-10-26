@@ -60,4 +60,12 @@ int king_mysql_query(king_mysql_t *info, MYSQL_RES **out_result,
 int king_mysql_query_result(king_mysql_t *info, king_result_t *out_result,
         char *sql_buf, int len);
 
+int king_mysql_add(king_mysql_t *info,
+        char *sql_buf, int len);
+
+int king_mysql_extend_add(king_mysql_t *info,
+        char *sql_buf, int len, long *out_id);
+
+int king_free_result(king_result_t *result);
+
 #endif

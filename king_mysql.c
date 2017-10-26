@@ -138,14 +138,14 @@ int king_mysql_query_result(king_mysql_t *info, king_result_t *out_result,
     {
         printf("%s: Invalid param", __FUNCTION__);
         return -1;
-    }    
+    }
 
     ret = king_mysql_query(info, &result, sql_buf,len);
     if (ret < 0)
     {
         printf("%s: Invalid param", __FUNCTION__);
         return -1;
-    }    
+    }
 
     row_num = mysql_num_rows(result);
     field_num = mysql_num_fields(result);
@@ -184,3 +184,86 @@ on_return:
     return status;
 }
 
+int king_mysql_add(king_mysql_t *info,
+        char *sql_buf, int len)
+{
+    int ret = 0;
+    int status = 0;
+
+    if (NULL == info || NULL == sql_buf)
+    {
+        printf("%s: Invalid param", __FUNCTION__);
+        return -1;
+    }
+
+    if (NULL == info->conn)
+    {
+        ret = king_mysql_connect(info);
+        if (ret < 0)
+        {
+            printf("%s: mysql connect failed", __FUNCTION__);
+            return -1;
+        }
+    }
+
+    ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
+    if (ret)
+    {
+        printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
+        return -1;
+    }
+
+on_return:
+
+    return status;
+}
+
+int king_mysql_extend_add(king_mysql_t *info,
+        char *sql_buf, int len, long *out_id)
+{
+    int ret = 0;
+    int status = 0;
+
+    if (NULL == info || NULL == sql_buf)
+    {
+        printf("%s: Invalid param", __FUNCTION__);
+        return -1;
+    }
+
+    if (NULL == info->conn)
+    {
+        ret = king_mysql_connect(info);
+        if (ret < 0)
+        {
+            printf("%s: mysql connect failed", __FUNCTION__);
+            return -1;
+        }
+    }        
+
+    ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
+    if (ret)
+    {
+        printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
+        return -1;
+    }
+
+    *out_id = mysql_insert_id(info->conn);
+
+on_return:
+
+    return status;
+}
+
+int king_free_result(king_result_t *result)
+{
+    if (result)
+    {
+        if (result->result_set)
+        {
+            free(result->result_set);
+            result->result_set = NULL;
+        }
+    }
+
+    return 0;
+}

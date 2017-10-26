@@ -37,6 +37,7 @@ int main(void)
     MYSQL_ROW row;
     king_mysql_t mysql_info;
     int i = 0;
+    long out_id = 0;
 
     memset(&mysql_info, 0, sizeof(mysql_info));
     memset(&result, 0, sizeof(result));
@@ -64,6 +65,15 @@ int main(void)
         printf("%s: result[%d]: %s\n", __FUNCTION__, i, result.result_set[i].s_value);
     }    
 
+    free(result.result_set);
+
+    snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-2')");
+    king_mysql_add(&mysql_info, query_buf, strlen(query_buf));
+
+    snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-3')");
+    king_mysql_extend_add(&mysql_info, query_buf, strlen(query_buf), &out_id);
+
+    printf("%s: insert get id: %ld\n", __FUNCTION__, out_id);
     king_mysql_close(&mysql_info);
     printf("hello world\n");
 
