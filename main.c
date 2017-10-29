@@ -50,7 +50,7 @@ int main(void)
     }
 
     snprintf(query_buf, sizeof(query_buf), "select * from student");
-    ret = king_mysql_query_result(&mysql_info, &result, query_buf, strlen(query_buf));
+    ret = king_mysql_query_result(&mysql_info, "test", &result, query_buf, strlen(query_buf));
     //ret = king_mysql_query(&mysql_info, &result, query_buf, strlen(query_buf));
     if (ret < 0)
     {
@@ -68,15 +68,17 @@ int main(void)
     free(result.result_set);
 
     snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-2')");
-    king_mysql_add(&mysql_info, query_buf, strlen(query_buf));
+    king_mysql_add(&mysql_info, "test", query_buf, strlen(query_buf));
 
-    snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-3')");
-    king_mysql_extend_add(&mysql_info, query_buf, strlen(query_buf), &out_id);
+    snprintf(query_buf, sizeof(query_buf), "delete from student where name = 'shengy-2'");
+    king_mysql_delete(&mysql_info, "test", query_buf, strlen(query_buf));
+
+    snprintf(query_buf, sizeof(query_buf), "update student set name = 'shengy-4' where name='shengy-3'");
+    king_mysql_update(&mysql_info, "test", query_buf, strlen(query_buf));
 
     printf("%s: insert get id: %ld\n", __FUNCTION__, out_id);
     king_mysql_close(&mysql_info);
     printf("hello world\n");
-
 
 #if 0
     conn = mysql_init(NULL);
