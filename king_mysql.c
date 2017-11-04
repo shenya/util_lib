@@ -28,7 +28,7 @@ int king_mysql_init(king_mysql_t *info, char *host, int port,
     if (NULL == info)
     {
         printf("%s: Invalid param\n", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     strcpy(info->host, host);
@@ -37,7 +37,7 @@ int king_mysql_init(king_mysql_t *info, char *host, int port,
     strcpy(info->passwd, passwd);
     strcpy(info->db_name, db_name);
 
-    return 0;
+    return KING_DB_OK;
 }
 
 int king_mysql_connect(king_mysql_t *info)
@@ -45,8 +45,8 @@ int king_mysql_connect(king_mysql_t *info)
     info->conn = mysql_init(NULL);
     if (NULL == info->conn)
     {
-        printf("%s: mysql connect failed\n", __FUNCTION__);
-        return -1;
+        printf("%s: mysql init failed\n", __FUNCTION__);
+        return KING_DB_INIT_FAILED;
     }
 
     info->conn = mysql_real_connect(info->conn, info->host, info->user,
@@ -55,10 +55,10 @@ int king_mysql_connect(king_mysql_t *info)
     {
         fprintf(stderr, "Failed to connect to database: Error: %s\n",
                   mysql_error(info->conn));
-        return -1;
+        return KING_DB_CONN_FAILED;
     }
 
-    return 0;
+    return KING_DB_OK;
 
 }
 
@@ -69,7 +69,7 @@ int king_mysql_select_db(MYSQL *conn, char *db_name)
     if (NULL == conn)
     {
         printf("%s: Invalid param\n", __FUNCTION__);
-        return -1;
+        return KING_DB_CONN_NOT_INIT;
     }
 
     if (NULL == db_name || 0 != strlen(db_name))
@@ -78,11 +78,11 @@ int king_mysql_select_db(MYSQL *conn, char *db_name)
         if (0 != ret)
         {
             printf("%s: select db failed\n", __FUNCTION__);
-            return -1;
+            return KING_DB_SEL_DB_FAILED | (ret << 5);
         }    
     }
 
-    return 0;
+    return KING_DB_OK;
 }
 
 int king_mysql_close(king_mysql_t *info)
@@ -90,19 +90,18 @@ int king_mysql_close(king_mysql_t *info)
     if (NULL == info)
     {
         printf("%s: Invalid param\n", __FUNCTION__);
-        return -1;
+        return KING_DB_CONN_NOT_INIT;
     }
 
     if (NULL == info->conn)
     {
-        return 0;
+        return KING_DB_OK;
     }
 
     mysql_close(info->conn);
     info->conn = NULL;
 
-    return 0;
-
+    return KING_DB_OK;
 }
 
 int king_mysql_query(king_mysql_t *info, char *db_name, MYSQL_RES **out_result,
@@ -114,7 +113,7 @@ int king_mysql_query(king_mysql_t *info, char *db_name, MYSQL_RES **out_result,
     if (NULL == info)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_CONN_NOT_INIT;
     }
 
     if (NULL == info->conn)
@@ -123,34 +122,34 @@ int king_mysql_query(king_mysql_t *info, char *db_name, MYSQL_RES **out_result,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
     ret = king_mysql_select_db(info->conn, db_name);
     if (0 != ret)
     {
-        printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        printf("%s: select db failed: ret: %d", __FUNCTION__, ret);
+        return ret;
     }
 
     ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
     if (ret)
     {
         printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
-        return -1;
+        return KING_DB_EXEC_SQL_FAILED | (ret << KING_ERR_OFFSET);
     }
 
     result = mysql_store_result(info->conn);
     if (NULL == result)
     {
         printf("%s: mysql use result failed\n", __FUNCTION__);
-        return -1;
+        return KING_DB_RESULT_FAILED;
     }
 
     *out_result = result;
 
-    return 0;
+    return KING_DB_OK;
 }
 
 int king_mysql_query_result(king_mysql_t *info, char *db_name,
@@ -158,7 +157,7 @@ int king_mysql_query_result(king_mysql_t *info, char *db_name,
         char *sql_buf, int len)
 {
     int ret = 0;
-    int status = 0;
+    int status = KING_DB_OK;
     MYSQL_RES *result = NULL;
     king_element_t *p_element = NULL;
     int row_num = 0;
@@ -169,7 +168,7 @@ int king_mysql_query_result(king_mysql_t *info, char *db_name,
     if (NULL == info || NULL == out_result || NULL == sql_buf)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     if (NULL == info->conn)
@@ -178,7 +177,7 @@ int king_mysql_query_result(king_mysql_t *info, char *db_name,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
@@ -186,14 +185,14 @@ int king_mysql_query_result(king_mysql_t *info, char *db_name,
     if (0 != ret)
     {
         printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        return ret;
     }
 
     ret = king_mysql_query(info, db_name, &result, sql_buf,len);
     if (ret < 0)
     {
-        printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        printf("%s: Invalid param: %d", __FUNCTION__, ret);
+        return ret;
     }
 
     row_num = mysql_num_rows(result);
@@ -205,7 +204,7 @@ int king_mysql_query_result(king_mysql_t *info, char *db_name,
     if (NULL == out_result->result_set)
     {
         printf("%s: malloc failed", __FUNCTION__);
-        status = -1;
+        status = KING_DB_ALLOCATE_FAILED;
         goto on_return;
     }
 
@@ -242,7 +241,7 @@ int king_mysql_add(king_mysql_t *info, char *db_name,
     if (NULL == info || NULL == sql_buf)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     if (NULL == info->conn)
@@ -251,7 +250,7 @@ int king_mysql_add(king_mysql_t *info, char *db_name,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
@@ -259,13 +258,13 @@ int king_mysql_add(king_mysql_t *info, char *db_name,
     if (0 != ret)
     {
         printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        return ret;
     }
     ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
     if (ret)
     {
         printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
-        return -1;
+        return KING_DB_EXEC_SQL_FAILED | (ret << KING_ERR_OFFSET);
     }
 
 on_return:
@@ -277,12 +276,12 @@ int king_mysql_extend_add(king_mysql_t *info, char *db_name,
         char *sql_buf, int len, long *out_id)
 {
     int ret = 0;
-    int status = 0;
+    int status = KING_DB_OK;
 
     if (NULL == info || NULL == sql_buf)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     if (NULL == info->conn)
@@ -291,7 +290,7 @@ int king_mysql_extend_add(king_mysql_t *info, char *db_name,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
@@ -299,14 +298,14 @@ int king_mysql_extend_add(king_mysql_t *info, char *db_name,
     if (0 != ret)
     {
         printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        return ret;
     }
 
     ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
     if (ret)
     {
         printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
-        return -1;
+        return KING_DB_EXEC_SQL_FAILED;
     }
 
     *out_id = mysql_insert_id(info->conn);
@@ -325,7 +324,7 @@ int king_mysql_delete(king_mysql_t *info, char *db_name,
     if (NULL == info || NULL == sql_buf)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     if (NULL == info->conn)
@@ -334,7 +333,7 @@ int king_mysql_delete(king_mysql_t *info, char *db_name,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
@@ -342,13 +341,13 @@ int king_mysql_delete(king_mysql_t *info, char *db_name,
     if (0 != ret)
     {
         printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        return ret;
     }
     ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
     if (ret)
     {
         printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
-        return -1;
+        return KING_DB_EXEC_SQL_FAILED;
     }
 
 on_return:
@@ -365,7 +364,7 @@ int king_mysql_update(king_mysql_t *info, char *db_name,
     if (NULL == info || NULL == sql_buf)
     {
         printf("%s: Invalid param", __FUNCTION__);
-        return -1;
+        return KING_DB_INVALID_PARAM;
     }
 
     if (NULL == info->conn)
@@ -374,7 +373,7 @@ int king_mysql_update(king_mysql_t *info, char *db_name,
         if (ret < 0)
         {
             printf("%s: mysql connect failed", __FUNCTION__);
-            return -1;
+            return ret;
         }
     }
 
@@ -382,14 +381,14 @@ int king_mysql_update(king_mysql_t *info, char *db_name,
     if (0 != ret)
     {
         printf("%s: select db failed", __FUNCTION__);
-        return -1;
+        return ret;
     }
 
     ret = mysql_real_query(info->conn, sql_buf, strlen(sql_buf));
     if (ret)
     {
         printf("%s: query failed:ret:%d\n", __FUNCTION__, ret);
-        return -1;
+        return KING_DB_EXEC_SQL_FAILED;
     }
 
 on_return:

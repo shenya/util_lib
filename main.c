@@ -49,9 +49,8 @@ int main(void)
         exit(1);
     }
 
-    snprintf(query_buf, sizeof(query_buf), "select * from student");
+    snprintf(query_buf, sizeof(query_buf), "select * from student where id=1000");
     ret = king_mysql_query_result(&mysql_info, "test", &result, query_buf, strlen(query_buf));
-    //ret = king_mysql_query(&mysql_info, &result, query_buf, strlen(query_buf));
     if (ret < 0)
     {
         printf("%s: mysql query failed\n", __FUNCTION__);
@@ -67,6 +66,7 @@ int main(void)
 
     free(result.result_set);
 
+#if 0
     snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-2')");
     king_mysql_add(&mysql_info, "test", query_buf, strlen(query_buf));
 
@@ -76,38 +76,12 @@ int main(void)
     snprintf(query_buf, sizeof(query_buf), "update student set name = 'shengy-4' where name='shengy-3'");
     king_mysql_update(&mysql_info, "test", query_buf, strlen(query_buf));
 
+    snprintf(query_buf, sizeof(query_buf), "insert into student(name) values('shengy-2')");
+    king_mysql_extend_add(&mysql_info, "test", query_buf, strlen(query_buf), &out_id);
+
     printf("%s: insert get id: %ld\n", __FUNCTION__, out_id);
     king_mysql_close(&mysql_info);
     printf("hello world\n");
-
-#if 0
-    conn = mysql_init(NULL);
-
-    conn = mysql_real_connect(conn, host, user, passwd, db, port, NULL, 0);
-    if (NULL == conn)
-    {
-        fprintf(stderr, "Failed to connect to database: Error: %s\n",
-                  mysql_error(conn));
-    }
-
-    snprintf(query_buf, sizeof(query_buf), "select * from student");
-    result = mysql_real_query(conn, query_buf, strlen(query_buf));
-    if (result)
-    {
-        printf("%s: real query failed: ret:%d\n", __FUNCTION__, ret);
-        exit(1);
-    }
-
-    res = mysql_use_result(conn);
-
-    while ((row = mysql_fetch_row(res)) != NULL)
-    {
-        printf("id : %s, name: %s\n", row[0], row[1]);
-    }
-    mysql_free_result(res); 
-    printf("hello world\n");
-
-    mysql_close(conn);
-    #endif
+#endif
     return 0;
 }
