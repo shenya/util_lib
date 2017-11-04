@@ -9,6 +9,6 @@ all:
 lib:
 	gcc -o libking_mysql.so $(LIB_SRC) -fPIC -shared $(LINK_LIB)
 install:
-	mkdir -p /usr/local/include/cjson
-	cp -a king_mysql.h /usr/local/include/cjson
+	mkdir -p /usr/local/include/king_mysql
+	cp -a king_mysql.h /usr/local/include/king_mysql
 	cp -a libking_mysql.so /usr/local/lib
