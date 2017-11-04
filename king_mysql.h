@@ -23,8 +23,6 @@
 
 #define KING_COLUME_LENGTH_MAX 1024
 
-#define KING_ERR_OFFSET 8
-
 enum KING_DB_ERROR
 {
     KING_DB_OK = 0,

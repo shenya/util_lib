@@ -51,9 +51,9 @@ int main(void)
 
     snprintf(query_buf, sizeof(query_buf), "select * from student where id=1000");
     ret = king_mysql_query_result(&mysql_info, "test", &result, query_buf, strlen(query_buf));
-    if (ret < 0)
+    if (0 != ret)
     {
-        printf("%s: mysql query failed\n", __FUNCTION__);
+        printf("%s: mysql query failed: ret:%d\n", __FUNCTION__, ret);
         exit(1);
     }
 
