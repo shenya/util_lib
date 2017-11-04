@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <mysql/mysql.h>
 
-#include "king_mysql.h"
+#include <king_mysql/king_mysql.h>
 
 char *host = "localhost";
 char *user = "root";
